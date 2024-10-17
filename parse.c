@@ -26,12 +26,27 @@ static Node* new_num(int val) {
 }
 
 static Node* expr(Token** rest, Token* tok) ;
+static Node* expr_stmt(Token**rest, Token* tok);
 static Node* mul(Token** rest, Token* tok);
 static Node* unary(Token** rest, Token* tok);
 static Node* equality(Token** rest, Token* tok);
 static Node* relational(Token**rest, Token* tok);
 static Node* add(Token** rest, Token*tok);
 static Node* primary(Token **rest, Token* tok);
+static Node* stmt(Token**rest, Token* tok);
+
+// stmt = expr-stmt
+static Node* stmt(Token**rest, Token* tok) {
+  return expr_stmt(rest, tok);
+}
+
+// expr_stmt = expr ";"
+static Node* expr_stmt(Token**rest, Token* tok) {
+  Node* node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
+  *rest = skip(tok, ";");
+  return node;
+
+}
 
 // expr = mul ("+" mul | "-" mul)*
 static Node* expr(Token **rest, Token* tok){
@@ -161,12 +176,15 @@ static Node* primary(Token **rest, Token* tok) {
 
 }
 
+// program = stmt*
 Node* parse(Token* tok) {
-  Node* node = expr(&tok, tok);
 
-  if(tok->kind != TK_EOF) {
-    error_tok(tok, "extra token");
+  Node head = {};
+  Node* cur = &head;
+  while(tok->kind != TK_EOF) {
+    cur = cur->next = stmt(&tok, tok);
+
   }
-  return node;
+  return head.next;
 
 }

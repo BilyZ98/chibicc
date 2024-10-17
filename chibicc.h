@@ -34,17 +34,17 @@ bool equal(Token* tok, char* op) ;
 Token* skip(Token* tok, char*s) ;
 Token* tokenize(char*input) ;
 typedef enum {
-  ND_ADD, // +
-  ND_SUB, // - 
-  ND_MUL, // *
-  ND_DIV, // /
-  ND_NEG, //  unary -
-  ND_EQ, // ==
-  ND_NE, // !=
-  ND_LT, // <
-  ND_LE, // <=
-  ND_NUM, // Integer
-  //
+  ND_ADD,       // +
+  ND_SUB,       // - 
+  ND_MUL,       // *
+  ND_DIV,       // /
+  ND_NEG,       //  unary -
+  ND_EQ,         // ==
+  ND_NE,         // !=
+  ND_LT,         // <
+  ND_LE,         // <=
+  ND_EXPR_STMT, // Expression statement
+  ND_NUM,       // Integer
 } NodeKind;
 
 typedef struct Node Node;
@@ -52,6 +52,7 @@ struct Node {
   NodeKind kind;
   Node* lhs; //left hand side
   Node* rhs; // right hand side
+  Node* next; // next node
   int val;  // used if kind == ND_NUM
 };
 
