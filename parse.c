@@ -27,6 +27,7 @@ static Node* new_num(int val) {
 
 static Node* expr(Token** rest, Token* tok) ;
 static Node* expr_stmt(Token**rest, Token* tok);
+static Node* assign(Token**rest, Token* tok);
 static Node* mul(Token** rest, Token* tok);
 static Node* unary(Token** rest, Token* tok);
 static Node* equality(Token** rest, Token* tok);
@@ -40,6 +41,13 @@ static Node* stmt(Token**rest, Token* tok) {
   return expr_stmt(rest, tok);
 }
 
+static Node* new_var_node(char name) {
+  Node* node = new_node(ND_VAR);
+  node->name = name;
+  return node;
+
+}
+
 // expr_stmt = expr ";"
 static Node* expr_stmt(Token**rest, Token* tok) {
   Node* node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
@@ -48,9 +56,20 @@ static Node* expr_stmt(Token**rest, Token* tok) {
 
 }
 
-// expr = mul ("+" mul | "-" mul)*
+// expr = assign
 static Node* expr(Token **rest, Token* tok){
-  return equality(rest, tok);
+  return assign(rest, tok);
+}
+
+// assign = equality ("=" assign)?
+static Node* assign(Token** rest, Token* tok) {
+  Node* node = equality(&tok, tok);
+  if(equal(tok, "=")) {
+    node = new_binary(ND_ASSIGN, node, assign(&tok, tok->next));
+  }
+
+  *rest = tok;
+  return node;
 }
 
 // bottom up
@@ -158,11 +177,17 @@ static Node* unary(Token **rest, Token* tok) {
 }
 
 
-// primary = "(" expr ")" | num
+// primary = "(" expr ")" | ident | num
 static Node* primary(Token **rest, Token* tok) {
   if(equal(tok, "(")) {
     Node* node = expr(&tok, tok->next);
     *rest = skip(tok, ")");
+    return node;
+  }
+
+  if(tok->kind == TK_IDENT) {
+    Node* node = new_var_node(*(tok->loc));
+    *rest = tok->next;
     return node;
   }
 
