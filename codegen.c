@@ -26,7 +26,9 @@ static void gen_addr_for_local_vars(Function* prog) {
 
   }
   // Why ?
+  // Align to 16 because of AMD65 ABI sepcification.
   prog->stack_size = align(cur_offset, 16);
+
 
 }
 static void gen_addr(Node* node) {
