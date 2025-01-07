@@ -199,6 +199,7 @@ static Obj* find_var(char* start, int len) {
 }
 
 static Obj* new_lvar(char* start, int len) {
+
   char* new_name = strndup(start, len)  ;
   Obj* new_lvar = calloc(1, sizeof(Obj));
   new_lvar->name = new_name;

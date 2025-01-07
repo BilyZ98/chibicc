@@ -5,17 +5,16 @@ assert() {
   input="$2"
   debug=${3:-0}
 
-  echo "debug num is $debug"
-  ./chibicc "$input" > tmp.s || exit
   if [[ "$debug" -eq 1 ]]; then 
-    echo "got here"
-  gcc -static -g -o tmp tmp.s
-  gdb --args ./tmp
+  gdb --args ./chibicc "$input" 
+  # > tmp.s || exit
+  # gcc -static -g -o tmp tmp.s
   else
-    echo "adfs $debug"
+  ./chibicc "$input" > tmp.s || exit
+  fi
+
   gcc -static  -o tmp tmp.s
   ./tmp
-  fi
 
   actual="$?"
 
@@ -61,7 +60,7 @@ assert 1 "1>=1;"
 assert 0 "1>=2;"
 assert 3 "1;2;3;"
 
-assert 3 "a=3; a;"  1
+assert 3 "a=3; a;"  
 assert 8 "a=3;b=5; a+b;"
 assert 6 "a=z=3; a+z;"
 

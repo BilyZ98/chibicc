@@ -16,7 +16,7 @@ static void pop(char* arg) {
 }
 
 static int align(int num, int align) {
-  return (num + align-1)/ align;
+  return (num + align-1)/ align * align;
 }
 static void gen_addr_for_local_vars(Function* prog) {
   int cur_offset = 0;
