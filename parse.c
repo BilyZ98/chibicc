@@ -1,4 +1,9 @@
 #include "chibicc.h"
+#include <string.h>
+
+// static Obj local_obj;
+static Obj* local_obj_ptr = NULL;
+
 static Node* new_node(NodeKind kind) {
   Node* node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -41,11 +46,18 @@ static Node* stmt(Token**rest, Token* tok) {
   return expr_stmt(rest, tok);
 }
 
-static Node* new_var_node(char name) {
-  Node* node = new_node(ND_VAR);
-  node->name = name;
-  return node;
+// static Node* new_var_node(char name) {
+//   Node* node = new_node(ND_VAR);
+//   node->name = name;
+//   return node;
 
+// }
+
+
+static Node* new_var_node(Obj* obj) {
+  Node* node = new_node(ND_VAR);
+  node->obj = obj;
+  return node;
 }
 
 // expr_stmt = expr ";"
@@ -177,6 +189,24 @@ static Node* unary(Token **rest, Token* tok) {
 }
 
 
+static Obj* find_var(char* start, int len) {
+  for(Obj* o_idx = local_obj_ptr; o_idx; o_idx=o_idx->next) {
+    if(len == strlen(o_idx->name) && strncmp(start, o_idx->name, len) == 0) {
+      return o_idx;
+    }
+  }
+  return NULL;
+}
+
+static Obj* new_lvar(char* start, int len) {
+  char* new_name = strndup(start, len)  ;
+  Obj* new_lvar = calloc(1, sizeof(Obj));
+  new_lvar->name = new_name;
+  new_lvar->next = local_obj_ptr;
+  local_obj_ptr = new_lvar;
+  return new_lvar;
+}
+
 // primary = "(" expr ")" | ident | num
 static Node* primary(Token **rest, Token* tok) {
   if(equal(tok, "(")) {
@@ -186,7 +216,12 @@ static Node* primary(Token **rest, Token* tok) {
   }
 
   if(tok->kind == TK_IDENT) {
-    Node* node = new_var_node(*(tok->loc));
+    // Node* node = new_var_node(*(tok->loc));
+    Obj* obj = find_var(tok->loc, tok->len);
+    if(!obj) {
+      obj = new_lvar(tok->loc, tok->len);
+    }
+    Node* node = new_var_node(obj);
     *rest = tok->next;
     return node;
   }
@@ -202,7 +237,7 @@ static Node* primary(Token **rest, Token* tok) {
 }
 
 // program = stmt*
-Node* parse(Token* tok) {
+Function* parse(Token* tok) {
 
   Node head = {};
   Node* cur = &head;
@@ -210,6 +245,11 @@ Node* parse(Token* tok) {
     cur = cur->next = stmt(&tok, tok);
 
   }
-  return head.next;
+  Function* func = calloc(1, sizeof(Function));
+  func->node = head.next;
+  func->locals = local_obj_ptr;
+
+  return func;
+  // return head.next;
 
 }

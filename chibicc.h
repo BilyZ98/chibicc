@@ -27,6 +27,14 @@ struct Token {
   int len;
 };
 
+typedef struct Obj Obj;
+struct Obj{
+  char* name;
+  Obj* next;
+  int offset;
+};
+
+
 void error(char* fmt, ...) ;
 void error_at(char* loc, char* fmt, ...);
 
@@ -56,11 +64,22 @@ struct Node {
   Node* lhs; //left hand side
   Node* rhs; // right hand side
   Node* next; // next node
-  char name;
+  // char name;
+  Obj* obj; // used if kind == ND_VAR
   int val;  // used if kind == ND_NUM
 };
 
-Node *parse(Token* tok);
+typedef struct Function Function;
+struct Function {
+  Node* node;
+  Obj* locals;
+  int stack_size;
+
+
+};
+
+
+Function *parse(Token* tok);
 
 // codegen.c
-void codegen(Node* node);
+void codegen(Function* prog);

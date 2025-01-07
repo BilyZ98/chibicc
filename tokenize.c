@@ -74,7 +74,16 @@ static Token* new_token(TokenKind kind, char* start, char* end) {
   return tok;
 }
 
+static bool isdent1(char c) {
 
+  return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z')|| c == '_';
+  
+}
+
+static bool isident2(char c) {
+  return isdent1(c) || (c >= '0' && c <='9');
+
+}
 Token* tokenize(char* p) {
   current_input = p;
   Token head = {};
@@ -93,11 +102,19 @@ Token* tokenize(char* p) {
       continue;
     }
 
-    if('a' <= *p && *p <= 'z')  {
-      cur = cur->next = new_token(TK_IDENT, p, p+1);
-      p++;
+    if(isdent1(*p)) {
+      char* id_start = p;
+      while(p && isident2(*p)) {
+        p++;
+      }
+      cur = cur->next = new_token(TK_IDENT, id_start, p);
       continue;
     }
+    // if('a' <= *p && *p <= 'z')  {
+    //   cur = cur->next = new_token(TK_IDENT, p, p+1);
+    //   p++;
+    //   continue;
+    // }
 
     int punct_len = read_punct(p);
     if(punct_len) {
