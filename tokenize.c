@@ -84,6 +84,15 @@ static bool isident2(char c) {
   return isdent1(c) || (c >= '0' && c <='9');
 
 }
+
+static void convert_keywords(Token* tok) {
+  for(; tok->kind != TK_EOF; tok = tok->next) {
+    if(equal(tok, "return")) {
+      tok->kind = TK_KEYWORD;
+    }
+  }
+
+}
 Token* tokenize(char* p) {
   current_input = p;
   Token head = {};
@@ -102,6 +111,7 @@ Token* tokenize(char* p) {
       continue;
     }
 
+    // identifier or keyword
     if(isdent1(*p)) {
       char* id_start = p;
       while(p && isident2(*p)) {
@@ -110,12 +120,7 @@ Token* tokenize(char* p) {
       cur = cur->next = new_token(TK_IDENT, id_start, p);
       continue;
     }
-    // if('a' <= *p && *p <= 'z')  {
-    //   cur = cur->next = new_token(TK_IDENT, p, p+1);
-    //   p++;
-    //   continue;
-    // }
-
+    
     int punct_len = read_punct(p);
     if(punct_len) {
       cur->next = new_token(TK_PUNCT, p, p+punct_len);
@@ -123,11 +128,12 @@ Token* tokenize(char* p) {
       p+=punct_len;
       continue;;
     }
-    error("invalid token");
+    error_at(p, "invalid token");
 
 
   }
   cur = cur->next = new_token(TK_EOF, p, p);
+  convert_keywords(head.next);
   return head.next;
 }
 

@@ -13,6 +13,7 @@ typedef enum {
   TK_PUNCT, // punctuators
   TK_NUM, 
   TK_IDENT, // Identity
+  TK_KEYWORD, // keywrods
   TK_EOF,
 
 } TokenKind;
@@ -57,6 +58,7 @@ typedef enum {
   ND_ASSIGN,     //  =
   ND_VAR,        // Variable
   ND_NUM,       // Integer
+  ND_RETURN,   // keyword return 
 } NodeKind;
 
 typedef struct Node Node;

@@ -64,6 +64,7 @@ static void gen_expr(Node* node) {
     pop("%rdi");
     printf("  mov %%rax, (%%rdi)\n");
     return;
+
   }
 
   gen_expr(node->rhs);
@@ -73,6 +74,8 @@ static void gen_expr(Node* node) {
 
   switch(node->kind) {
     case ND_ADD:
+    // adds the value in the %rdi register to the value 
+    // in the %rax register, and stores the result in %rax.
     printf(" add %%rdi, %%rax\n");
     return;
     
@@ -112,6 +115,11 @@ static void gen_expr(Node* node) {
 }
 
 static void gen_stmt(Node* node) {
+  if(node->kind == ND_RETURN) {
+    gen_expr(node->lhs);
+    printf("  jmp .L.return\n");
+    return;
+  }
   if(node->kind == ND_EXPR_STMT) {
     gen_expr(node->lhs);
     return;
@@ -137,8 +145,12 @@ void codegen(Function* prog) {
   }
 
   // Epilogue
+  printf(".L.return:\n");
   printf("  mov %%rbp, %%rsp\n");
   printf("  pop %%rbp\n");
+  // In x86-64 calling conventions, 
+  // the return value of a function is typically stored 
+  // in the rax register
   printf("  ret\n");
 
 

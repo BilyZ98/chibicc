@@ -41,17 +41,17 @@ static Node* add(Token** rest, Token*tok);
 static Node* primary(Token **rest, Token* tok);
 static Node* stmt(Token**rest, Token* tok);
 
-// stmt = expr-stmt
+// stmt = "return" expr ";" | 
+//         expr-stmt
 static Node* stmt(Token**rest, Token* tok) {
+  if(equal(tok, "return")) {
+    Node* node = new_unary(ND_RETURN, expr(&tok, tok->next));
+    *rest = skip(tok, ";");
+    return node;
+  }
+
   return expr_stmt(rest, tok);
 }
-
-// static Node* new_var_node(char name) {
-//   Node* node = new_node(ND_VAR);
-//   node->name = name;
-//   return node;
-
-// }
 
 
 static Node* new_var_node(Obj* obj) {
