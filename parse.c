@@ -40,9 +40,11 @@ static Node* relational(Token**rest, Token* tok);
 static Node* add(Token** rest, Token*tok);
 static Node* primary(Token **rest, Token* tok);
 static Node* stmt(Token**rest, Token* tok);
+static Node* compound_stmt(Token**rest, Token* tok);
 
-// stmt = "return" expr ";" | 
-//         expr-stmt
+// stmt = "return" expr ";" 
+//        | "{" compound_stmt
+//        | expr-stmt
 static Node* stmt(Token**rest, Token* tok) {
   if(equal(tok, "return")) {
     Node* node = new_unary(ND_RETURN, expr(&tok, tok->next));
@@ -50,9 +52,27 @@ static Node* stmt(Token**rest, Token* tok) {
     return node;
   }
 
+  if(equal(tok, "{")) {
+    return compound_stmt(rest, tok->next);
+  }
+
   return expr_stmt(rest, tok);
 }
 
+// compound_stmt = stmt* "}"
+static Node* compound_stmt(Token** rest, Token* tok) {
+  Node head = {};
+  Node* cur = &head;
+  while(!equal(tok, "}")) {
+    cur = cur->next = stmt(&tok, tok);
+  }
+  Node* node = new_node(ND_BLOCK);
+  node->body = head.next;
+  *rest = tok->next;
+
+  return node;
+
+}
 
 static Node* new_var_node(Obj* obj) {
   Node* node = new_node(ND_VAR);
@@ -233,21 +253,18 @@ static Node* primary(Token **rest, Token* tok) {
     return node;
   }
 
-  error_tok(tok, "expected an expression");
+
+  fprintf(stderr, "tok kind %d \n",tok->kind);
+  error_tok(tok, "expected an expression, tok kind", tok->kind);
 
 }
 
 // program = stmt*
 Function* parse(Token* tok) {
 
-  Node head = {};
-  Node* cur = &head;
-  while(tok->kind != TK_EOF) {
-    cur = cur->next = stmt(&tok, tok);
-
-  }
+  tok = skip(tok, "{");
   Function* func = calloc(1, sizeof(Function));
-  func->node = head.next;
+  func->body = compound_stmt(&tok, tok);
   func->locals = local_obj_ptr;
 
   return func;
