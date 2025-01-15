@@ -73,6 +73,15 @@ assert 3 '{ 1; 2; return 3; }'
 assert 3 '{ {1; {2;} return 3;} }'
 
 assert 5 '{ ;;; return 5; }'
+
+
+assert 3 '{ if (0) return 2; return 3; }'
+assert 3 '{ if (1-1) return 2; return 3; }'
+assert 2 '{ if (1) return 2; return 3; }'
+assert 2 '{ if (2-1) return 2; return 3; }'
+assert 4 '{ if (0) { 1; 2; return 3; } else { return 4; } }'
+assert 3 '{ if (1) { 1; 2; return 3; } else if(3){ return 4; } }'
+
 # assert 0 "{return 0;}"
 # assert 42 '{return 42;}'
 # assert 21 "{return 5+20-4;}"

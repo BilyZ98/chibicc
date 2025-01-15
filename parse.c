@@ -45,6 +45,7 @@ static Node* compound_stmt(Token**rest, Token* tok);
 // stmt = "return" expr ";" 
 //        | "{" compound_stmt
 //        | expr-stmt
+//        | "if" "(" expr ")" stmt ("else" stmt)?
 static Node* stmt(Token**rest, Token* tok) {
   if(equal(tok, "return")) {
     Node* node = new_unary(ND_RETURN, expr(&tok, tok->next));
@@ -54,6 +55,19 @@ static Node* stmt(Token**rest, Token* tok) {
 
   if(equal(tok, "{")) {
     return compound_stmt(rest, tok->next);
+  }
+
+  if(equal(tok, "if")) {
+    tok = skip(tok->next, "(");
+    Node* node = new_node(ND_IF);
+    node->cond = expr(&tok, tok);
+    tok = skip(tok, ")");
+    node->then = stmt(&tok, tok);
+    if(equal(tok, "else")) {
+      node->els = stmt(&tok, tok->next);
+    }
+    *rest = tok;
+    return node;
   }
 
   return expr_stmt(rest, tok);

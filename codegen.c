@@ -114,6 +114,11 @@ static void gen_expr(Node* node) {
   error("invalid expression");
 }
 
+static int count_if_depth(void) {
+  static int i = 1;
+  return i++;
+}
+
 static void gen_stmt(Node* node) {
   switch(node->kind) {
     case ND_RETURN:
@@ -132,6 +137,21 @@ static void gen_stmt(Node* node) {
       // assert(depth == 0);
     }
     return;
+
+    case ND_IF:
+    int c = count_if_depth();
+    gen_expr(node->cond);
+    printf("  cmp $0, %%rax\n");
+    printf("  je  .L.else.%d\n", c);
+    gen_stmt(node->then);
+    printf("  jmp .L.end.%d\n", c);
+    printf(".L.else.%d:\n", c);
+    if(node->els) {
+        gen_stmt(node->els);
+    }
+    printf(".L.end.%d:\n",c);
+    return;
+
   }
   error("invalid statement");
 

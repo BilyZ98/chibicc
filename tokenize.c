@@ -85,9 +85,18 @@ static bool isident2(char c) {
 
 }
 
+static bool is_keyword(Token* tok) {
+  char* arr[] = {"return", "if", "else"} ;
+  for(int i=0; i < sizeof(arr)/ sizeof(*arr); i++ ) {
+    if(equal(tok, arr[i])) {
+      return true;
+    }
+  }
+  return false;
+}
 static void convert_keywords(Token* tok) {
   for(; tok->kind != TK_EOF; tok = tok->next) {
-    if(equal(tok, "return")) {
+    if(is_keyword(tok)) {
       tok->kind = TK_KEYWORD;
     }
   }
