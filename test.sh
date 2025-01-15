@@ -72,6 +72,7 @@ assert 3 '{ 1; 2; return 3; }'
 
 assert 3 '{ {1; {2;} return 3;} }'
 
+assert 5 '{ ;;; return 5; }'
 # assert 0 "{return 0;}"
 # assert 42 '{return 42;}'
 # assert 21 "{return 5+20-4;}"

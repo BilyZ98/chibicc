@@ -80,8 +80,13 @@ static Node* new_var_node(Obj* obj) {
   return node;
 }
 
-// expr_stmt = expr ";"
+// expr_stmt = expr? ";"
 static Node* expr_stmt(Token**rest, Token* tok) {
+  if(equal(tok, ";")) {
+    Node* node = new_node(ND_BLOCK);
+    *rest = tok->next;
+    return node;
+  }
   Node* node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
   *rest = skip(tok, ";");
   return node;
