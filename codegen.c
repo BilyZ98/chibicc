@@ -114,7 +114,7 @@ static void gen_expr(Node* node) {
   error("invalid expression");
 }
 
-static int count_if_depth(void) {
+static int count_depth(void) {
   static int i = 1;
   return i++;
 }
@@ -131,27 +131,47 @@ static void gen_stmt(Node* node) {
     return;
 
     case ND_BLOCK:
-    for(Node* n = node->body; n; n = n->next) {
-      // Traverse the AST to emit assembly
-      gen_stmt(n);
-      // assert(depth == 0);
-    }
-    return;
+      for(Node* n = node->body; n; n = n->next) {
+        // Traverse the AST to emit assembly
+        gen_stmt(n);
+        // assert(depth == 0);
+      }
+      return;
 
-    case ND_IF:
-    int c = count_if_depth();
-    gen_expr(node->cond);
-    printf("  cmp $0, %%rax\n");
-    printf("  je  .L.else.%d\n", c);
-    gen_stmt(node->then);
-    printf("  jmp .L.end.%d\n", c);
-    printf(".L.else.%d:\n", c);
-    if(node->els) {
-        gen_stmt(node->els);
-    }
-    printf(".L.end.%d:\n",c);
-    return;
+    case ND_IF: {
+      int c = count_depth();
+      gen_expr(node->cond);
+      printf("  cmp $0, %%rax\n");
+      printf("  je  .L.else.%d\n", c);
+      gen_stmt(node->then);
+      printf("  jmp .L.end.%d\n", c);
+      printf(".L.else.%d:\n", c);
+      if(node->els) {
+          gen_stmt(node->els);
+      }
+      printf(".L.end.%d:\n",c);
+      return;
 
+    }
+    case ND_FOR: {
+      int c = count_depth();
+      gen_stmt(node->init);
+      printf(".L.begin.%d:\n", c);
+      if(node->cond) {
+        gen_expr(node->cond);
+        printf("  cmp $0, %%rax\n");
+        printf("  je .L.end.%d\n",c);
+      }
+
+      gen_stmt(node->then);
+      if(node->inc) {
+        gen_expr(node->inc);
+      }
+      printf("  jmp .L.begin.%d\n",c);
+      printf(".L.end.%d:\n",c);
+      return;
+    }
+      
   }
   error("invalid statement");
 

@@ -61,6 +61,7 @@ typedef enum {
   ND_RETURN,   // keyword return 
   ND_BLOCK,    // {} block 
   ND_IF,        // if else block
+  ND_FOR,       // for block
 } NodeKind;
 
 typedef struct Node Node;
@@ -71,10 +72,13 @@ struct Node {
   Node* next; // next node
   Node* body; // {} body node
 
-  // "if" statement
+  // "if" or "for" statement
   Node* cond; 
   Node* then; 
   Node* els; 
+  Node* init;
+  Node* inc;
+
 
   // char name;
   Obj* obj; // used if kind == ND_VAR
