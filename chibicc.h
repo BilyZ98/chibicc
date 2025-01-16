@@ -61,7 +61,7 @@ typedef enum {
   ND_RETURN,   // keyword return 
   ND_BLOCK,    // {} block 
   ND_IF,        // if else block
-  ND_FOR,       // for block
+  ND_FOR,       // "for" and "while" block
 } NodeKind;
 
 typedef struct Node Node;
