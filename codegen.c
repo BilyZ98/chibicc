@@ -39,7 +39,7 @@ static void gen_addr(Node* node) {
     return;
   }
 
-  error("not an lvalue");
+  error_tok(node->tok, "not an lvalue");
 }
 static void gen_expr(Node* node) {
   switch(node->kind) {
@@ -111,7 +111,7 @@ static void gen_expr(Node* node) {
     printf(" movzb %%al, %%rax\n");
     return;
   }
-  error("invalid expression");
+  error_tok(node->tok, "invalid expression");
 }
 
 static int count_depth(void) {
@@ -175,7 +175,7 @@ static void gen_stmt(Node* node) {
     }
       
   }
-  error("invalid statement");
+  error_tok(node->tok, "invalid statement");
 
 }
 void codegen(Function* prog) {

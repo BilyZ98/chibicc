@@ -4,28 +4,28 @@
 // static Obj local_obj;
 static Obj* local_obj_ptr = NULL;
 
-static Node* new_node(NodeKind kind) {
+static Node* new_node(NodeKind kind, Token* tok) {
   Node* node = calloc(1, sizeof(Node));
   node->kind = kind;
+  node->tok = tok;
   return node;
 }
 
-static Node *new_binary(NodeKind kind, Node* lhs, Node* rhs) {
-  Node* node = new_node(kind);
+static Node *new_binary(NodeKind kind, Node* lhs, Node* rhs, Token* tok) {
+  Node* node = new_node(kind, tok);
   node->lhs = lhs;
   node->rhs = rhs;
   return node;
 }
 
-static Node* new_unary(NodeKind kind, Node*expr) {
-  Node* node = new_node(kind);
-  node->kind = kind;
+static Node* new_unary(NodeKind kind, Node* expr, Token* tok) {
+  Node* node = new_node(kind, tok);
   node->lhs = expr;
   return node;
 }
 
-static Node* new_num(int val) {
-  Node* node = new_node(ND_NUM);
+static Node* new_num(int val, Token* tok) {
+  Node* node = new_node(ND_NUM, tok);
   node->val = val;
   return node;
 }
@@ -50,7 +50,7 @@ static Node* compound_stmt(Token**rest, Token* tok);
 //        | "while" "(" expr ")" stmt
 static Node* stmt(Token**rest, Token* tok) {
   if(equal(tok, "return")) {
-    Node* node = new_unary(ND_RETURN, expr(&tok, tok->next));
+    Node* node = new_unary(ND_RETURN, expr(&tok, tok->next), tok);
     *rest = skip(tok, ";");
     return node;
   }
@@ -61,7 +61,7 @@ static Node* stmt(Token**rest, Token* tok) {
 
   if(equal(tok, "if")) {
     tok = skip(tok->next, "(");
-    Node* node = new_node(ND_IF);
+    Node* node = new_node(ND_IF, tok);
     node->cond = expr(&tok, tok);
     tok = skip(tok, ")");
     node->then = stmt(&tok, tok);
@@ -74,7 +74,7 @@ static Node* stmt(Token**rest, Token* tok) {
 
   if(equal(tok, "for")) {
     tok = skip(tok->next, "(");
-    Node* node = new_node(ND_FOR);
+    Node* node = new_node(ND_FOR, tok);
     node->init = expr_stmt(&tok, tok);
     if(!equal(tok, ";")) {
       node->cond = expr(&tok, tok);
@@ -82,7 +82,7 @@ static Node* stmt(Token**rest, Token* tok) {
     tok = skip(tok, ";");
 
     if(!equal(tok, ")")) {
-    node->inc = expr(&tok, tok);
+      node->inc = expr(&tok, tok);
     }
     tok = skip(tok, ")");
     node->then = stmt(&tok, tok);
@@ -92,7 +92,7 @@ static Node* stmt(Token**rest, Token* tok) {
 
   if(equal(tok, "while")) {
     tok = skip(tok->next, "("); 
-    Node* node = new_node(ND_FOR);
+    Node* node = new_node(ND_FOR, tok);
     node->cond = expr(&tok, tok);
     tok = skip(tok, ")");
     node->then = stmt(&tok, tok);
@@ -110,7 +110,7 @@ static Node* compound_stmt(Token** rest, Token* tok) {
   while(!equal(tok, "}")) {
     cur = cur->next = stmt(&tok, tok);
   }
-  Node* node = new_node(ND_BLOCK);
+  Node* node = new_node(ND_BLOCK, tok);
   node->body = head.next;
   *rest = tok->next;
 
@@ -119,7 +119,7 @@ static Node* compound_stmt(Token** rest, Token* tok) {
 }
 
 static Node* new_var_node(Obj* obj) {
-  Node* node = new_node(ND_VAR);
+  Node* node = new_node(ND_VAR, NULL);
   node->obj = obj;
   return node;
 }
@@ -127,11 +127,11 @@ static Node* new_var_node(Obj* obj) {
 // expr_stmt = expr? ";"
 static Node* expr_stmt(Token**rest, Token* tok) {
   if(equal(tok, ";")) {
-    Node* node = new_node(ND_BLOCK);
+    Node* node = new_node(ND_BLOCK, tok);
     *rest = tok->next;
     return node;
   }
-  Node* node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
+  Node* node = new_unary(ND_EXPR_STMT, expr(&tok, tok), tok);
   *rest = skip(tok, ";");
   return node;
 
@@ -146,7 +146,7 @@ static Node* expr(Token **rest, Token* tok){
 static Node* assign(Token** rest, Token* tok) {
   Node* node = equality(&tok, tok);
   if(equal(tok, "=")) {
-    node = new_binary(ND_ASSIGN, node, assign(&tok, tok->next));
+    node = new_binary(ND_ASSIGN, node, assign(&tok, tok->next), tok);
   }
 
   *rest = tok;
@@ -159,12 +159,12 @@ static Node* equality(Token **rest, Token*tok) {
   Node* node = relational(&tok, tok);
   for(;;) {
     if(equal(tok, "==")) {
-      node = new_binary(ND_EQ, node, relational(&tok, tok->next));
+      node = new_binary(ND_EQ, node, relational(&tok, tok->next), tok);
       continue;
     }
 
     if(equal(tok, "!=")) {
-      node = new_binary(ND_NE, node, relational(&tok, tok->next));
+      node = new_binary(ND_NE, node, relational(&tok, tok->next), tok);
       continue;;
     }
     *rest = tok;
@@ -178,22 +178,22 @@ static Node* relational(Token**rest, Token* tok) {
   Node* node = add(&tok, tok);
   for(;;) {
     if(equal(tok, "<")) {
-      node = new_binary(ND_LT, node, add(&tok, tok->next));
+      node = new_binary(ND_LT, node, add(&tok, tok->next), tok);
       continue;;
     }
 
     if(equal(tok, "<=")) {
-      node = new_binary(ND_LE, node, add(&tok, tok->next));
+      node = new_binary(ND_LE, node, add(&tok, tok->next), tok);
       continue;;
     }
 
     if(equal(tok, ">")) {
-      node = new_binary(ND_LT, add(&tok, tok->next), node);
+      node = new_binary(ND_LT, add(&tok, tok->next), node, tok);
       continue;;
     }
 
     if(equal(tok, ">=")) {
-      node = new_binary(ND_LE, add(&tok, tok->next), node);
+      node = new_binary(ND_LE, add(&tok, tok->next), node, tok);
       continue;;
     }
     *rest = tok;
@@ -208,12 +208,12 @@ static Node* add(Token**rest, Token* tok) {
 
   for(;;){
     if(equal(tok, "+") ) {
-      node = new_binary(ND_ADD, node, mul(&tok, tok->next));
+      node = new_binary(ND_ADD, node, mul(&tok, tok->next), tok);
       continue;
     }
 
     if(equal(tok, "-")) {
-      node = new_binary(ND_SUB, node, mul(&tok, tok->next));
+      node = new_binary(ND_SUB, node, mul(&tok, tok->next), tok);
       continue;
     }
 
@@ -230,12 +230,12 @@ static Node* mul(Token**rest, Token* tok) {
 
   for(;;) {
     if(equal(tok, "*")) {
-      node =  new_binary(ND_MUL, node, unary(&tok, tok->next));
+      node =  new_binary(ND_MUL, node, unary(&tok, tok->next), tok);
       continue;;
     }
 
     if(equal(tok, "/")) {
-      node = new_binary(ND_DIV, node, unary(&tok, tok->next));
+      node = new_binary(ND_DIV, node, unary(&tok, tok->next), tok);
       continue;;
     }
 
@@ -251,7 +251,7 @@ static Node* unary(Token **rest, Token* tok) {
     return unary(rest, tok->next);
 
   if(equal(tok, "-"))
-    return new_unary(ND_NEG, unary(rest, tok->next));
+    return new_unary(ND_NEG, unary(rest, tok->next), tok);
 
   return primary(rest, tok);
 
@@ -297,7 +297,7 @@ static Node* primary(Token **rest, Token* tok) {
   }
 
   if(tok->kind  == TK_NUM) {
-    Node* node = new_num(tok->val);
+    Node* node = new_num(tok->val, tok);
     *rest = tok->next;
     return node;
   }

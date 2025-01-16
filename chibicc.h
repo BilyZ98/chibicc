@@ -72,6 +72,8 @@ struct Node {
   Node* next; // next node
   Node* body; // {} body node
 
+  Token* tok; // representative token
+
   // "if" or "for" statement
   Node* cond; 
   Node* then; 
