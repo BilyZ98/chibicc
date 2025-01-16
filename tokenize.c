@@ -86,7 +86,7 @@ static bool isident2(char c) {
 }
 
 static bool is_keyword(Token* tok) {
-  char* arr[] = {"return", "if", "else", "for"} ;
+  char* arr[] = {"return", "if", "else", "for", "while"} ;
   for(int i=0; i < sizeof(arr)/ sizeof(*arr); i++ ) {
     if(equal(tok, arr[i])) {
       return true;
