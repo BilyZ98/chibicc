@@ -22,7 +22,7 @@ static void gen_addr_for_local_vars(Function* prog) {
   int cur_offset = 0;
   for(Obj* obj=prog->locals; obj; obj=obj->next) {
     cur_offset+=8;
-    obj->offset = cur_offset;
+    obj->offset = -cur_offset;
 
   }
   // Why ?
@@ -31,16 +31,21 @@ static void gen_addr_for_local_vars(Function* prog) {
 
 
 }
-static void gen_addr(Node* node) {
-  if(node->kind == ND_VAR) {
-    // int offset = (node->name - 'a' + 1)*8;
-    int offset = node->obj->offset;
-    printf("  lea %d(%%rbp), %%rax\n", -offset);
-    return;
-  }
+static void gen_expr(Node* node);
 
+static void gen_addr(Node* node) {
+  switch(node->kind) {
+    case ND_VAR:
+    printf("  lea %d(%%rbp), %%rax\n", node->obj->offset);
+    return;
+
+    case ND_DEREF:
+      gen_expr(node->lhs);
+      return;
+  } 
   error_tok(node->tok, "not an lvalue");
 }
+
 static void gen_expr(Node* node) {
   switch(node->kind) {
     case ND_NUM:
@@ -63,6 +68,15 @@ static void gen_expr(Node* node) {
     gen_expr(node->rhs);
     pop("%rdi");
     printf("  mov %%rax, (%%rdi)\n");
+    return;
+
+    case ND_ADDR:
+    gen_addr(node->lhs);
+    return;
+
+    case ND_DEREF:
+    gen_expr(node->lhs);
+    printf("  mov (%%rax), %%rax\n");
     return;
 
   }

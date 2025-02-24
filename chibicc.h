@@ -58,6 +58,8 @@ typedef enum {
   ND_ASSIGN,     //  =
   ND_VAR,        // Variable
   ND_NUM,       // Integer
+  ND_ADDR,      // unary &
+  ND_DEREF,     // unary *
   ND_RETURN,   // keyword return 
   ND_BLOCK,    // {} block 
   ND_IF,        // if else block
