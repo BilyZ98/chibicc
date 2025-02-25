@@ -245,7 +245,7 @@ static Node* mul(Token**rest, Token* tok) {
 }
 
 
-// unary = ("+" | "-") unary | primary
+// unary = ("+" | "-" | "*" | "&") unary | primary
 static Node* unary(Token **rest, Token* tok) {
   if(equal(tok, "+"))
     return unary(rest, tok->next);
