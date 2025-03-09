@@ -66,9 +66,17 @@ typedef enum {
   ND_FOR,       // "for" and "while" block
 } NodeKind;
 
+typedef enum {
+  TY_INT,
+  TY_PTR,
+
+} TypeKind;
+
 typedef struct Node Node;
+typedef struct Type Type;
 struct Node {
   NodeKind kind;
+  Type* type;
   Node* lhs; //left hand side
   Node* rhs; // right hand side
   Node* next; // next node
@@ -89,6 +97,14 @@ struct Node {
   int val;  // used if kind == ND_NUM
 };
 
+
+
+struct Type{
+  TypeKind kind;
+  Type* base;
+
+};
+
 typedef struct Function Function;
 struct Function {
   Node* body;
@@ -98,8 +114,11 @@ struct Function {
 
 };
 
+extern Type* ty_int;
 
 Function *parse(Token* tok);
 
 // codegen.c
 void codegen(Function* prog);
+bool is_integer(Type* ty);
+void add_type(Node* node);

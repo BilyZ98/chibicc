@@ -30,6 +30,67 @@ static Node* new_num(int val, Token* tok) {
   return node;
 }
 
+
+static Node* new_add(Node* lhs, Node* rhs, Token* tok) {
+  add_type(lhs);
+  add_type(rhs);
+
+  // num and num
+  if(is_integer(lhs->type) && is_integer(rhs->type)){
+    return new_binary(ND_ADD, lhs, rhs, tok);
+  }
+
+  // ptr and ptr is an error for add
+  if(lhs->type->base && rhs->type->base) {
+    fprintf(stderr, "lhs type kind:%d, rhs type kind:%d\n", lhs->type->kind, rhs->type->kind);
+    fprintf(stderr, "lhs base: %d, rhs base: %d\n", lhs->type->base, rhs->type->base);
+    error_tok(tok, "invalid operation");
+  }
+  //
+
+  if(!lhs->type->base && rhs->type->base) {
+    Node* tmp = lhs;
+    lhs = rhs;
+    rhs = tmp;
+  }
+
+  // ptr and num
+  rhs = new_binary(ND_MUL, rhs, new_num(8, tok), tok);
+  return new_binary(ND_ADD, lhs, rhs, tok);
+
+}
+
+static Node* new_sub(Node* lhs, Node* rhs, Token* tok) {
+  add_type(lhs);
+  add_type(rhs);
+
+  // num and num
+  if(is_integer(lhs->type) && is_integer(rhs->type)) {
+    return new_binary(ND_SUB, lhs, rhs, tok);
+  }
+
+  // ptr - num
+  if(lhs->type->base && is_integer(rhs->type)  ) {
+
+    rhs = new_binary(ND_MUL, rhs, new_num(8, tok), tok);
+    return new_binary(ND_SUB, lhs, rhs, tok);
+
+  }
+
+  // ptr - ptr 
+  if(lhs->type->base && rhs->type->base) {
+    Node* sub_node = new_binary(ND_SUB, lhs, rhs, tok);
+    sub_node->type = ty_int;
+    return new_binary(ND_DIV, sub_node, new_num(8, tok), tok );
+  }
+
+  error_tok(tok, "invalid operation");
+
+
+}
+
+
+
 static Node* expr(Token** rest, Token* tok) ;
 static Node* expr_stmt(Token**rest, Token* tok);
 static Node* assign(Token**rest, Token* tok);
@@ -109,6 +170,7 @@ static Node* compound_stmt(Token** rest, Token* tok) {
   Node* cur = &head;
   while(!equal(tok, "}")) {
     cur = cur->next = stmt(&tok, tok);
+    add_type(cur);
   }
   Node* node = new_node(ND_BLOCK, tok);
   node->body = head.next;
@@ -208,12 +270,14 @@ static Node* add(Token**rest, Token* tok) {
 
   for(;;){
     if(equal(tok, "+") ) {
-      node = new_binary(ND_ADD, node, mul(&tok, tok->next), tok);
+      // node = new_binary(ND_ADD, node, mul(&tok, tok->next), tok);
+      node = new_add(node, mul(&tok, tok->next), tok);
       continue;
     }
 
     if(equal(tok, "-")) {
-      node = new_binary(ND_SUB, node, mul(&tok, tok->next), tok);
+      // node = new_binary(ND_SUB, node, mul(&tok, tok->next), tok);
+      node = new_sub(node, mul(&tok, tok->next), tok);
       continue;
     }
 
