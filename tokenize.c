@@ -35,7 +35,16 @@ static void verror_at(char *loc, char* fmt, va_list ap) {
 }
 
 
- bool equal(Token* tok, char* op) {
+bool consume(Token **rest, Token *tok, char* str) {
+  if(equal(tok, str)) {
+    *rest = tok->next;
+    return true;
+  }
+  *rest = tok;
+  return false;
+}
+
+bool equal(Token* tok, char* op) {
   return memcmp(tok->loc, op, tok->len) == 0 && op[tok->len] == '\0';
 }
 
@@ -86,7 +95,7 @@ static bool isident2(char c) {
 }
 
 static bool is_keyword(Token* tok) {
-  char* arr[] = {"return", "if", "else", "for", "while"} ;
+  char* arr[] = {"return", "if", "else", "for", "while", "int"} ;
   for(int i=0; i < sizeof(arr)/ sizeof(*arr); i++ ) {
     if(equal(tok, arr[i])) {
       return true;
@@ -100,8 +109,8 @@ static void convert_keywords(Token* tok) {
       tok->kind = TK_KEYWORD;
     }
   }
-
 }
+
 Token* tokenize(char* p) {
   current_input = p;
   Token head = {};

@@ -29,13 +29,6 @@ struct Token {
   int len;
 };
 
-typedef struct Obj Obj;
-struct Obj{
-  char* name;
-  Obj* next;
-  int offset;
-};
-
 
 void error(char* fmt, ...) ;
 void error_at(char* loc, char* fmt, ...);
@@ -43,6 +36,7 @@ void error_at(char* loc, char* fmt, ...);
 void error_tok(Token*tok, char* fmt, ...) ;
 bool equal(Token* tok, char* op) ;
 Token* skip(Token* tok, char*s) ;
+bool consume(Token**rest, Token *tok, char* str);
 Token* tokenize(char*input) ;
 typedef enum {
   ND_ADD,       // +
@@ -72,8 +66,29 @@ typedef enum {
 
 } TypeKind;
 
-typedef struct Node Node;
 typedef struct Type Type;
+struct Type{
+  TypeKind kind;
+  // Pointer
+  Type* base;
+  
+  // Declaration
+  Token* name;
+
+};
+
+
+typedef struct Obj Obj;
+struct Obj{
+  char* name; // Variable name
+  Type* ty; // Type
+  Obj* next;
+  int offset; // Offset from RBP
+};
+
+
+
+typedef struct Node Node;
 struct Node {
   NodeKind kind;
   Type* type;
@@ -99,12 +114,6 @@ struct Node {
 
 
 
-struct Type{
-  TypeKind kind;
-  Type* base;
-
-};
-
 typedef struct Function Function;
 struct Function {
   Node* body;
@@ -122,3 +131,4 @@ Function *parse(Token* tok);
 void codegen(Function* prog);
 bool is_integer(Type* ty);
 void add_type(Node* node);
+Type* pointer_to(Type* type);

@@ -99,6 +99,7 @@ static Node* unary(Token** rest, Token* tok);
 static Node* equality(Token** rest, Token* tok);
 static Node* relational(Token**rest, Token* tok);
 static Node* add(Token** rest, Token*tok);
+static Node* declaration(Token **rest, Token* tok);
 static Node* primary(Token **rest, Token* tok);
 static Node* stmt(Token**rest, Token* tok);
 static Node* compound_stmt(Token**rest, Token* tok);
@@ -164,12 +165,105 @@ static Node* stmt(Token**rest, Token* tok) {
   return expr_stmt(rest, tok);
 }
 
-// compound_stmt = stmt* "}"
+static Node* new_var_node(Obj* obj, Token* tok) {
+  Node* node = new_node(ND_VAR, tok);
+  node->obj = obj;
+  return node;
+}
+
+static Obj* new_lvar(char* name, Type* ty) {
+  // char* new_name = strndup(start, len)  ;
+  Obj* new_lvar = calloc(1, sizeof(Obj));
+  new_lvar->name = name; 
+  new_lvar->ty = ty;
+  new_lvar->next = local_obj_ptr;
+  local_obj_ptr = new_lvar;
+  return new_lvar;
+}
+
+static char* get_ident(Token* tok) {
+
+  if(tok->kind != TK_IDENT) {
+    error_tok(tok, "expected an identifier");
+  }
+  return strndup(tok->loc, tok->len);
+  
+}
+
+// declspec = "int"
+static Type* declspec(Token** rest, Token* tok) {
+
+  *rest=  skip(tok, "int");
+  return ty_int;
+}
+
+
+//  declarator = "*"* ident
+static Type* declarator(Token** rest, Token* tok, Type* ty){
+
+  while(consume(&tok, tok, "*")) {
+    ty = pointer_to(ty);
+
+  }
+
+  if(tok->kind != TK_IDENT) {
+    error_tok(tok, "expected a variable name");
+  }
+
+
+  ty->name = tok;
+  *rest = tok->next;
+  return ty;
+
+
+
+
+}
+
+// declaration = declspec ( declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
+static Node* declaration(Token** rest, Token* tok) {
+  Type* basety = declspec(&tok, tok);
+
+  Node head = {};
+  Node* cur = &head;
+  int i = 0;
+  while(!equal(tok, ";")) {
+    if(i++ > 0) {
+      tok = skip(tok, ",");
+    }
+
+    Type* ty = declarator(&tok, tok, basety);
+    Obj* var = new_lvar(get_ident(ty->name), ty);
+
+    if(!equal(tok, "=")) {
+      continue;
+    }
+
+    Node* lhs = new_var_node(var, ty->name);
+    Node* rhs = assign(&tok, tok->next);
+    Node* node = new_binary(ND_ASSIGN, lhs, rhs, tok);
+
+    cur = cur->next = new_unary(ND_EXPR_STMT, node, tok);
+
+
+  }
+  Node* node = new_node(ND_BLOCK, tok);
+  node->body = head.next;
+  *rest = tok->next;
+  return node;
+
+}
+// compound_stmt = (declaration | stmt)* "}"
 static Node* compound_stmt(Token** rest, Token* tok) {
   Node head = {};
   Node* cur = &head;
   while(!equal(tok, "}")) {
-    cur = cur->next = stmt(&tok, tok);
+    if(equal(tok, "int")) {
+      cur = cur->next = declaration(&tok, tok);
+
+    } else{
+      cur = cur->next = stmt(&tok, tok);
+    }
     add_type(cur);
   }
   Node* node = new_node(ND_BLOCK, tok);
@@ -180,11 +274,6 @@ static Node* compound_stmt(Token** rest, Token* tok) {
 
 }
 
-static Node* new_var_node(Obj* obj) {
-  Node* node = new_node(ND_VAR, NULL);
-  node->obj = obj;
-  return node;
-}
 
 // expr_stmt = expr? ";"
 static Node* expr_stmt(Token**rest, Token* tok) {
@@ -337,15 +426,7 @@ static Obj* find_var(char* start, int len) {
   return NULL;
 }
 
-static Obj* new_lvar(char* start, int len) {
 
-  char* new_name = strndup(start, len)  ;
-  Obj* new_lvar = calloc(1, sizeof(Obj));
-  new_lvar->name = new_name;
-  new_lvar->next = local_obj_ptr;
-  local_obj_ptr = new_lvar;
-  return new_lvar;
-}
 
 // primary = "(" expr ")" | ident | num
 static Node* primary(Token **rest, Token* tok) {
@@ -359,9 +440,9 @@ static Node* primary(Token **rest, Token* tok) {
     // Node* node = new_var_node(*(tok->loc));
     Obj* obj = find_var(tok->loc, tok->len);
     if(!obj) {
-      obj = new_lvar(tok->loc, tok->len);
+      error_tok(tok, "undefined variable");
     }
-    Node* node = new_var_node(obj);
+    Node* node = new_var_node(obj, tok);
     *rest = tok->next;
     return node;
   }
